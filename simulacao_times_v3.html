@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skynet QA | Simulação de Times</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
+.header{background:linear-gradient(135deg,#FF6B35 0%,#EA1D2C 100%);padding:22px 32px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  box-shadow:0 4px 20px rgba(234,29,44,.3)}
+.header h1{color:#fff;font-size:20px;font-weight:800}
+.header p{color:rgba(255,255,255,.85);font-size:12px;margin-top:3px}
+.hb{background:rgba(255,255,255,.2);color:#fff;padding:5px 13px;border-radius:16px;
+  font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.3)}
+.twrap{padding:20px 32px 0}
+.tabs{display:flex;gap:4px;background:#fff;border-radius:14px;padding:6px;
+  box-shadow:0 2px 10px rgba(0,0,0,.07);width:fit-content}
+.tab{padding:10px 28px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;
+  color:#888;border:none;background:none;transition:all .18s}
+.tab.active{background:linear-gradient(135deg,#FF6B35,#EA1D2C);color:#fff;
+  box-shadow:0 4px 12px rgba(234,29,44,.3)}
+.tab:hover:not(.active){background:#f5f5f5;color:#444}
+.content{padding:20px 32px 40px}
+.pane{display:none}.pane.active{display:block}
+
+/* RACIONAL */
+.rat-card{background:#fff;border-radius:14px;padding:20px 24px;
+  box-shadow:0 2px 10px rgba(0,0,0,.07);margin-bottom:16px;border-left:4px solid #4361ee}
+.rat-tit{font-size:13px;font-weight:800;color:#4361ee;margin-bottom:10px}
+.rat-txt{width:100%;min-height:85px;border:1.5px solid #e0e0e0;border-radius:10px;
+  padding:11px 14px;font-size:13px;font-family:'Inter',sans-serif;resize:vertical;
+  outline:none;color:#333;line-height:1.6}
+.rat-txt:focus{border-color:#4361ee;box-shadow:0 0 0 3px rgba(67,97,238,.08)}
+.rat-txt::placeholder{color:#bbb}
+
+/* SUMMARY */
+.srow{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+  gap:11px;margin-bottom:16px}
+.scard{background:#fff;border-radius:12px;padding:13px 14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);border-top:3px solid #ddd;text-align:center}
+.snum{font-size:24px;font-weight:800;margin:4px 0;line-height:1}
+.slbl{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+
+/* DRAG TIP */
+.drag-tip{background:rgba(255,107,53,.07);border:1px dashed rgba(255,107,53,.3);
+  border-radius:10px;padding:9px 14px;font-size:12px;color:#888;margin-bottom:14px}
+
+/* ORG */
+.org-wrap{max-width:1400px;margin:0 auto 16px}
+.gerbox{background:linear-gradient(135deg,#1a1a2e,#2d2d44);color:#fff;
+  border-radius:16px;padding:16px 22px;display:flex;align-items:center;gap:14px;
+  max-width:460px;margin:0 auto;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.gertit{font-size:16px;font-weight:800}
+.gersub{font-size:11px;color:rgba(255,255,255,.6);margin-top:3px}
+.connv{width:2px;height:24px;background:linear-gradient(#1a1a2e,#ddd);margin:0 auto}
+.trow{display:grid;grid-template-columns:1fr 1fr .65fr .65fr .65fr;gap:12px;align-items:start}
+@media(max-width:1100px){.trow{grid-template-columns:1fr 1fr}}
+
+/* TEAM COL */
+.tcol,.tcol-sm{border-radius:14px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.09);background:#fff}
+.thdr{padding:13px 14px;display:flex;align-items:center;gap:10px;color:#fff}
+.tname{font-size:13px;font-weight:800}
+.tcnt{font-size:11px;opacity:.75;margin-top:2px}
+.tbody{padding:8px;display:flex;flex-direction:column;gap:7px;
+  min-height:56px;border-radius:0 0 14px 14px;transition:background .15s}
+.tbody.dover{background:#fff8f0;outline:2px dashed #FF6B35;outline-offset:-3px}
+.edrop{text-align:center;color:#ccc;font-size:12px;padding:12px;border-radius:8px;
+  border:2px dashed #eee}
+
+/* AGENT CARD */
+.acard{border-radius:10px;padding:9px 11px;cursor:grab;
+  transition:transform .15s,box-shadow .15s;position:relative}
+.acard:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.1)}
+.acard.dragging{opacity:.4}
+.atop{display:flex;align-items:center;gap:9px}
+.av{width:33px;height:33px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0}
+.ai{flex:1;min-width:0}
+.an{font-size:13px;font-weight:700;color:#1a1a2e}
+.aq{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.qtag{background:#f0f2f5;color:#555;padding:2px 6px;border-radius:5px;
+  font-size:10px;font-weight:600;cursor:pointer;transition:background .15s;user-select:none}
+.qtag:hover{background:#dde3f0}
+.mbadge{font-size:10px;font-weight:700;color:#FF6B35;background:#fff5f0;
+  border:1px solid #ffd4c0;border-radius:6px;padding:2px 7px;margin-bottom:6px;display:inline-block}
+.dh{font-size:10px;color:#ccc;text-align:right;margin-top:3px;letter-spacing:.5px}
+
+/* MOV SECTION */
+.movsec{background:#fff;border-radius:14px;padding:18px 20px;
+  box-shadow:0 2px 10px rgba(0,0,0,.07);margin-bottom:16px;border-left:4px solid #FF6B35}
+.movtit{font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:11px}
+.movleg{display:flex;flex-direction:column;gap:8px}
+.mitem{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:#fafafa;border-radius:9px;padding:8px 12px}
+.mwho{font-size:13px;min-width:140px}
+.mflow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mde{background:#ffebee;color:#c62828;padding:3px 9px;border-radius:6px;font-size:12px;font-weight:600}
+.marr{font-size:16px;color:#FF6B35;font-weight:800}
+.para-ok{background:#e8f5e9;color:#1b5e20;padding:3px 9px;border-radius:6px;font-size:12px;font-weight:600}
+.para-elim{background:#f3e5f5;color:#6a1b9a;padding:3px 9px;border-radius:6px;font-size:12px;font-weight:600}
+
+/* EDITOR */
+.edpanel{background:#fff;border-radius:14px;padding:18px 20px;
+  box-shadow:0 2px 10px rgba(0,0,0,.07);border-left:4px solid #9b59b6}
+.edtit{font-size:13px;font-weight:800;color:#9b59b6;margin-bottom:8px}
+.edhint{font-size:12px;color:#888;margin-bottom:12px;line-height:1.5}
+.edform{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:#f8f9fa;padding:11px 14px;border-radius:10px}
+.edlbl{font-size:11px;font-weight:700;color:#555}
+.edsel,.edinp{padding:7px 11px;border:1.5px solid #e0e0e0;border-radius:8px;
+  font-size:13px;font-family:'Inter',sans-serif;outline:none;background:#fff;color:#333}
+.edsel:focus,.edinp:focus{border-color:#9b59b6}
+.edinp{width:150px}
+.edarr{font-size:18px;color:#FF6B35;font-weight:800}
+.btn-ok{background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;border:none;
+  padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'Inter',sans-serif}
+.btn-ok:hover{opacity:.85}
+.btn-rst{background:#f0f2f5;color:#666;border:none;padding:8px 14px;border-radius:8px;
+  font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-rst:hover{background:#e0e3e8}
+.edhist{margin-top:11px}
+.edhist-tit{font-size:12px;font-weight:700;color:#555;margin-bottom:7px}
+.hitem{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:#fafafa;border-radius:8px;padding:7px 11px;margin-bottom:5px;font-size:12px}
+.hwho{font-weight:700;color:#1a1a2e;min-width:80px}
+.htime{color:#bbb;font-size:11px;margin-left:auto}
+.footer{background:#1a1a2e;color:#aaa;text-align:center;padding:13px;font-size:11px;margin-top:20px}
+.footer strong{color:#FF6B35}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><h1>👥 Simulação de Estrutura de Times</h1><p>Zoop | iFood Pago · Gerência Unificada · Drag &amp; Drop · Racional editável · Skynet QA v10.0</p></div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="hb">🔀 3 Versões</span><span class="hb">✏️ Racional editável</span><span class="hb">⠿ Drag &amp; Drop</span></div>
+</div>
+
+<div class="twrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('v1',this)">🔀 Versão 1</button>
+    <button class="tab" onclick="showTab('v2',this)">🔀 Versão 2</button>
+    <button class="tab" onclick="showTab('v3',this)">🔀 Versão 3</button>
+  </div>
+</div>
+
+<div class="content">
+  <div id="pane-v1" class="pane active"><div class="rat-card"><div class="rat-tit">📝 Racional desta versão</div><textarea class="rat-txt" id="rat-v1" placeholder="Escreva aqui o racional e justificativa desta estrutura..." oninput="saveRat('v1',this.value)"></textarea></div><div class="srow" id="v1-srow"><div class="scard" style="border-top-color:#4361ee"><div class="snum" style="color:#4361ee" id="v1-sum-N1">4</div><div class="slbl">N1</div></div><div class="scard" style="border-top-color:#f39c12"><div class="snum" style="color:#f39c12" id="v1-sum-N2">4</div><div class="slbl">N2</div></div><div class="scard" style="border-top-color:#2ecc71"><div class="snum" style="color:#2ecc71" id="v1-sum-Melhoria-Continua">1</div><div class="slbl">Melhoria Contínua</div></div><div class="scard" style="border-top-color:#9b59b6"><div class="snum" style="color:#9b59b6" id="v1-sum-QA">2</div><div class="slbl">QA</div></div><div class="scard" style="border-top-color:#e74c3c"><div class="snum" style="color:#e74c3c" id="v1-sum-Customer-Improvement">1</div><div class="slbl">Customer Improvement</div></div><div class="scard" style="border-top-color:#1a1a2e"><div class="snum" id="v1-sum-total">12</div><div class="slbl">Total</div></div></div><div class="drag-tip">⠿ Arraste os cards entre os times &nbsp;·&nbsp; Clique nas tags <strong>✏️</strong> para editar a caixa</div><div class="org-wrap"><div class="gerbox"><span style="font-size:28px">👔</span><div><div class="gertit">Gerência Unificada</div><div class="gersub">N1 · N2 · Melhoria Contínua · QA · Customer Improvement</div></div></div><div class="connv"></div><div class="trow"><div class="tcol"><div class="thdr" style="background:#4361ee"><span style="font-size:20px">🔵</span><div><div class="tname">N1</div><div class="tcnt" id="v1-cnt-N1">4 pessoas</div></div></div><div class="tbody droptarget" data-ver="v1" data-team="N1" data-tid="N1" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v1-isabela" data-ver="v1" data-aid="isabela" data-aname="Isabela" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">I</div><div class="ai"><div class="an">Isabela</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="isabela" data-qi="0" onclick="editQt(event)">ERP ✏️</span><span class="qtag" data-ver="v1" data-aid="isabela" data-qi="1" onclick="editQt(event)">Long Tail ✏️</span><span class="qtag" data-ver="v1" data-aid="isabela" data-qi="2" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v1-bell" data-ver="v1" data-aid="bell" data-aname="Bell" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">B</div><div class="ai"><div class="an">Bell</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="bell" data-qi="0" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v1-fernanda" data-ver="v1" data-aid="fernanda" data-aname="Fernanda" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">F</div><div class="ai"><div class="an">Fernanda</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="fernanda" data-qi="0" onclick="editQt(event)">E-commerce ✏️</span><span class="qtag" data-ver="v1" data-aid="fernanda" data-qi="1" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v1-liliane" data-ver="v1" data-aid="liliane" data-aname="Liliane" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">L</div><div class="ai"><div class="an">Liliane</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="liliane" data-qi="0" onclick="editQt(event)">Banco ✏️</span><span class="qtag" data-ver="v1" data-aid="liliane" data-qi="1" onclick="editQt(event)">E-commerce ✏️</span><span class="qtag" data-ver="v1" data-aid="liliane" data-qi="2" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol"><div class="thdr" style="background:#f39c12"><span style="font-size:20px">🟡</span><div><div class="tname">N2</div><div class="tcnt" id="v1-cnt-N2">4 pessoas</div></div></div><div class="tbody droptarget" data-ver="v1" data-team="N2" data-tid="N2" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v1-marcella" data-ver="v1" data-aid="marcella" data-aname="Marcella" style="border:2px solid #f39c1222;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#f39c12">M</div><div class="ai"><div class="an">Marcella</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="marcella" data-qi="0" onclick="editQt(event)">Credenciamento ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v1-thamires" data-ver="v1" data-aid="thamires" data-aname="Thamires" style="border:3px solid #FF6B35;background:#fffbf5" ondragstart="ds(event)"><div class="mbadge">🔀 N1 · ERP/Long Tail/PSP</div><div class="atop"><div class="av" style="background:#FF6B35">T</div><div class="ai"><div class="an">Thamires</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="thamires" data-qi="0" onclick="editQt(event)">Credenciamento ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v1-luciene" data-ver="v1" data-aid="luciene" data-aname="Luciene" style="border:2px solid #f39c1222;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#f39c12">L</div><div class="ai"><div class="an">Luciene</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="luciene" data-qi="0" onclick="editQt(event)">Transacional ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v1-jessica" data-ver="v1" data-aid="jessica" data-aname="Jessica" style="border:2px solid #f39c1222;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#f39c12">J</div><div class="ai"><div class="an">Jessica</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="jessica" data-qi="0" onclick="editQt(event)">Financeiro ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol-sm"><div class="thdr" style="background:#2ecc71"><span style="font-size:20px">🔄</span><div><div class="tname">Melhoria Contínua</div><div class="tcnt" id="v1-cnt-Melhoria-Continua">1 pessoa</div></div></div><div class="tbody droptarget" data-ver="v1" data-team="Melhoria Contínua" data-tid="Melhoria-Continua" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v1-kaic" data-ver="v1" data-aid="kaic" data-aname="Kaic" style="border:2px solid #2ecc7122;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#2ecc71">K</div><div class="ai"><div class="an">Kaic</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="kaic" data-qi="0" onclick="editQt(event)">Melhoria Contínua ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol-sm"><div class="thdr" style="background:#9b59b6"><span style="font-size:20px">🔍</span><div><div class="tname">QA</div><div class="tcnt" id="v1-cnt-QA">2 pessoas</div></div></div><div class="tbody droptarget" data-ver="v1" data-team="QA" data-tid="QA" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v1-nicoly" data-ver="v1" data-aid="nicoly" data-aname="Nicoly" style="border:3px solid #FF6B35;background:#fffbf5" ondragstart="ds(event)"><div class="mbadge">🔀 N2 · Transacional</div><div class="atop"><div class="av" style="background:#FF6B35">N</div><div class="ai"><div class="an">Nicoly</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="nicoly" data-qi="0" onclick="editQt(event)">Documentação ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v1-teixeira" data-ver="v1" data-aid="teixeira" data-aname="Teixeira" style="border:2px solid #9b59b622;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#9b59b6">T</div><div class="ai"><div class="an">Teixeira</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="teixeira" data-qi="0" onclick="editQt(event)">QA ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol-sm"><div class="thdr" style="background:#e74c3c"><span style="font-size:20px">⭐</span><div><div class="tname">Customer Improvement</div><div class="tcnt" id="v1-cnt-Customer-Improvement">1 pessoa</div></div></div><div class="tbody droptarget" data-ver="v1" data-team="Customer Improvement" data-tid="Customer-Improvement" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v1-aline" data-ver="v1" data-aid="aline" data-aname="Aline" style="border:3px solid #FF6B35;background:#fffbf5" ondragstart="ds(event)"><div class="mbadge">🔀 N2 · Financeiro</div><div class="atop"><div class="av" style="background:#FF6B35">A</div><div class="ai"><div class="an">Aline</div><div class="aq"><span class="qtag" data-ver="v1" data-aid="aline" data-qi="0" onclick="editQt(event)">Customer Improvement ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div></div></div><div class="movsec"><div class="movtit">🔀 Movimentações predefinidas desta versão</div><div class="movleg"><div class="mitem"><span class="mwho">🔵➡️🟡 <strong>Thamires</strong></span><div class="mflow"><span class="mde">N1 · ERP / Long Tail / PSP</span><span class="marr">→</span><span class="para-ok">N2 · Credenciamento</span></div></div><div class="mitem"><span class="mwho">🟡➡️🔍 <strong>Nicoly</strong></span><div class="mflow"><span class="mde">N2 · Transacional</span><span class="marr">→</span><span class="para-ok">QA · Documentação</span></div></div><div class="mitem"><span class="mwho">🟡➡️⭐ <strong>Aline</strong></span><div class="mflow"><span class="mde">N2 · Financeiro</span><span class="marr">→</span><span class="para-ok">Customer Improvement</span></div></div></div></div><div class="edpanel"><div class="edtit">🔧 Simular movimentação adicional</div><div class="edhint">Selecione pessoa, novo time e caixa (opcional), depois clique em Aplicar. Ou simplesmente arraste os cards no organograma acima.</div><div class="edform"><label class="edlbl">Pessoa</label><select id="fp-p-v1" class="edsel"><option value="isabela">Isabela</option><option value="bell">Bell</option><option value="fernanda">Fernanda</option><option value="liliane">Liliane</option><option value="marcella">Marcella</option><option value="thamires">Thamires</option><option value="luciene">Luciene</option><option value="jessica">Jessica</option><option value="nicoly">Nicoly</option><option value="aline">Aline</option><option value="kaic">Kaic</option><option value="teixeira">Teixeira</option></select><span class="edarr">→</span><label class="edlbl">Novo Time</label><select id="fp-t-v1" class="edsel"><option value="N1">N1</option><option value="N2">N2</option><option value="Melhoria Contínua">Melhoria Contínua</option><option value="QA">QA</option><option value="Customer Improvement">Customer Improvement</option></select><label class="edlbl">Caixa</label><input id="fp-q-v1" class="edinp" placeholder="ex: Financeiro, PSP..."><button class="btn-ok" onclick="applyForm('v1')">✅ Aplicar</button><button class="btn-rst" onclick="resetVer('v1')">↺ Reset</button></div><div id="hist-v1" class="edhist"></div></div></div>
+  <div id="pane-v2" class="pane"><div class="rat-card"><div class="rat-tit">📝 Racional desta versão</div><textarea class="rat-txt" id="rat-v2" placeholder="Escreva aqui o racional e justificativa desta estrutura..." oninput="saveRat('v2',this.value)"></textarea></div><div class="srow" id="v2-srow"><div class="scard" style="border-top-color:#4361ee"><div class="snum" style="color:#4361ee" id="v2-sum-N1">4</div><div class="slbl">N1</div></div><div class="scard" style="border-top-color:#f39c12"><div class="snum" style="color:#f39c12" id="v2-sum-N2">4</div><div class="slbl">N2</div></div><div class="scard" style="border-top-color:#2ecc71"><div class="snum" style="color:#2ecc71" id="v2-sum-Melhoria-Continua">1</div><div class="slbl">Melhoria Contínua</div></div><div class="scard" style="border-top-color:#9b59b6"><div class="snum" style="color:#9b59b6" id="v2-sum-QA">2</div><div class="slbl">QA</div></div><div class="scard" style="border-top-color:#e74c3c"><div class="snum" style="color:#e74c3c" id="v2-sum-Customer-Improvement">1</div><div class="slbl">Customer Improvement</div></div><div class="scard" style="border-top-color:#1a1a2e"><div class="snum" id="v2-sum-total">12</div><div class="slbl">Total</div></div></div><div class="drag-tip">⠿ Arraste os cards entre os times &nbsp;·&nbsp; Clique nas tags <strong>✏️</strong> para editar a caixa</div><div class="org-wrap"><div class="gerbox"><span style="font-size:28px">👔</span><div><div class="gertit">Gerência Unificada</div><div class="gersub">N1 · N2 · Melhoria Contínua · QA · Customer Improvement</div></div></div><div class="connv"></div><div class="trow"><div class="tcol"><div class="thdr" style="background:#4361ee"><span style="font-size:20px">🔵</span><div><div class="tname">N1</div><div class="tcnt" id="v2-cnt-N1">4 pessoas</div></div></div><div class="tbody droptarget" data-ver="v2" data-team="N1" data-tid="N1" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v2-thamires" data-ver="v2" data-aid="thamires" data-aname="Thamires" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">T</div><div class="ai"><div class="an">Thamires</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="thamires" data-qi="0" onclick="editQt(event)">ERP ✏️</span><span class="qtag" data-ver="v2" data-aid="thamires" data-qi="1" onclick="editQt(event)">Long Tail ✏️</span><span class="qtag" data-ver="v2" data-aid="thamires" data-qi="2" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v2-isabela" data-ver="v2" data-aid="isabela" data-aname="Isabela" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">I</div><div class="ai"><div class="an">Isabela</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="isabela" data-qi="0" onclick="editQt(event)">ERP ✏️</span><span class="qtag" data-ver="v2" data-aid="isabela" data-qi="1" onclick="editQt(event)">Long Tail ✏️</span><span class="qtag" data-ver="v2" data-aid="isabela" data-qi="2" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v2-fernanda" data-ver="v2" data-aid="fernanda" data-aname="Fernanda" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">F</div><div class="ai"><div class="an">Fernanda</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="fernanda" data-qi="0" onclick="editQt(event)">E-commerce ✏️</span><span class="qtag" data-ver="v2" data-aid="fernanda" data-qi="1" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v2-liliane" data-ver="v2" data-aid="liliane" data-aname="Liliane" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">L</div><div class="ai"><div class="an">Liliane</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="liliane" data-qi="0" onclick="editQt(event)">Banco ✏️</span><span class="qtag" data-ver="v2" data-aid="liliane" data-qi="1" onclick="editQt(event)">E-commerce ✏️</span><span class="qtag" data-ver="v2" data-aid="liliane" data-qi="2" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol"><div class="thdr" style="background:#f39c12"><span style="font-size:20px">🟡</span><div><div class="tname">N2</div><div class="tcnt" id="v2-cnt-N2">4 pessoas</div></div></div><div class="tbody droptarget" data-ver="v2" data-team="N2" data-tid="N2" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v2-marcella" data-ver="v2" data-aid="marcella" data-aname="Marcella" style="border:2px solid #f39c1222;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#f39c12">M</div><div class="ai"><div class="an">Marcella</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="marcella" data-qi="0" onclick="editQt(event)">Credenciamento ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v2-luciene" data-ver="v2" data-aid="luciene" data-aname="Luciene" style="border:3px solid #FF6B35;background:#fffbf5" ondragstart="ds(event)"><div class="mbadge">🔀 N2 · Transacional</div><div class="atop"><div class="av" style="background:#FF6B35">L</div><div class="ai"><div class="an">Luciene</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="luciene" data-qi="0" onclick="editQt(event)">Credenciamento ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v2-jessica" data-ver="v2" data-aid="jessica" data-aname="Jessica" style="border:2px solid #f39c1222;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#f39c12">J</div><div class="ai"><div class="an">Jessica</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="jessica" data-qi="0" onclick="editQt(event)">Financeiro ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v2-bell" data-ver="v2" data-aid="bell" data-aname="Bell" style="border:3px solid #FF6B35;background:#fffbf5" ondragstart="ds(event)"><div class="mbadge">🔀 N1 · PSP</div><div class="atop"><div class="av" style="background:#FF6B35">B</div><div class="ai"><div class="an">Bell</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="bell" data-qi="0" onclick="editQt(event)">Transacional ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol-sm"><div class="thdr" style="background:#2ecc71"><span style="font-size:20px">🔄</span><div><div class="tname">Melhoria Contínua</div><div class="tcnt" id="v2-cnt-Melhoria-Continua">1 pessoa</div></div></div><div class="tbody droptarget" data-ver="v2" data-team="Melhoria Contínua" data-tid="Melhoria-Continua" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v2-kaic" data-ver="v2" data-aid="kaic" data-aname="Kaic" style="border:2px solid #2ecc7122;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#2ecc71">K</div><div class="ai"><div class="an">Kaic</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="kaic" data-qi="0" onclick="editQt(event)">Melhoria Contínua ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol-sm"><div class="thdr" style="background:#9b59b6"><span style="font-size:20px">🔍</span><div><div class="tname">QA</div><div class="tcnt" id="v2-cnt-QA">2 pessoas</div></div></div><div class="tbody droptarget" data-ver="v2" data-team="QA" data-tid="QA" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v2-nicoly" data-ver="v2" data-aid="nicoly" data-aname="Nicoly" style="border:3px solid #FF6B35;background:#fffbf5" ondragstart="ds(event)"><div class="mbadge">🔀 N2 · Transacional</div><div class="atop"><div class="av" style="background:#FF6B35">N</div><div class="ai"><div class="an">Nicoly</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="nicoly" data-qi="0" onclick="editQt(event)">Documentação ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v2-teixeira" data-ver="v2" data-aid="teixeira" data-aname="Teixeira" style="border:2px solid #9b59b622;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#9b59b6">T</div><div class="ai"><div class="an">Teixeira</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="teixeira" data-qi="0" onclick="editQt(event)">QA ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol-sm"><div class="thdr" style="background:#e74c3c"><span style="font-size:20px">⭐</span><div><div class="tname">Customer Improvement</div><div class="tcnt" id="v2-cnt-Customer-Improvement">1 pessoa</div></div></div><div class="tbody droptarget" data-ver="v2" data-team="Customer Improvement" data-tid="Customer-Improvement" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v2-aline" data-ver="v2" data-aid="aline" data-aname="Aline" style="border:3px solid #FF6B35;background:#fffbf5" ondragstart="ds(event)"><div class="mbadge">🔀 N2 · Financeiro</div><div class="atop"><div class="av" style="background:#FF6B35">A</div><div class="ai"><div class="an">Aline</div><div class="aq"><span class="qtag" data-ver="v2" data-aid="aline" data-qi="0" onclick="editQt(event)">Customer Improvement ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div></div></div><div class="movsec"><div class="movtit">🔀 Movimentações predefinidas desta versão</div><div class="movleg"><div class="mitem"><span class="mwho">🟡➡️🟡 <strong>Luciene</strong></span><div class="mflow"><span class="mde">N2 · Transacional</span><span class="marr">→</span><span class="para-ok">N2 · Credenciamento</span></div></div><div class="mitem"><span class="mwho">🔵➡️🟡 <strong>Bell</strong></span><div class="mflow"><span class="mde">N1 · PSP</span><span class="marr">→</span><span class="para-ok">N2 · Transacional</span></div></div><div class="mitem"><span class="mwho">🟡➡️🔍 <strong>Nicoly</strong></span><div class="mflow"><span class="mde">N2 · Transacional</span><span class="marr">→</span><span class="para-ok">QA · Documentação</span></div></div><div class="mitem"><span class="mwho">🟡➡️⭐ <strong>Aline</strong></span><div class="mflow"><span class="mde">N2 · Financeiro</span><span class="marr">→</span><span class="para-ok">Customer Improvement</span></div></div></div></div><div class="edpanel"><div class="edtit">🔧 Simular movimentação adicional</div><div class="edhint">Selecione pessoa, novo time e caixa (opcional), depois clique em Aplicar. Ou simplesmente arraste os cards no organograma acima.</div><div class="edform"><label class="edlbl">Pessoa</label><select id="fp-p-v2" class="edsel"><option value="thamires">Thamires</option><option value="isabela">Isabela</option><option value="fernanda">Fernanda</option><option value="liliane">Liliane</option><option value="marcella">Marcella</option><option value="luciene">Luciene</option><option value="jessica">Jessica</option><option value="bell">Bell</option><option value="nicoly">Nicoly</option><option value="aline">Aline</option><option value="kaic">Kaic</option><option value="teixeira">Teixeira</option></select><span class="edarr">→</span><label class="edlbl">Novo Time</label><select id="fp-t-v2" class="edsel"><option value="N1">N1</option><option value="N2">N2</option><option value="Melhoria Contínua">Melhoria Contínua</option><option value="QA">QA</option><option value="Customer Improvement">Customer Improvement</option></select><label class="edlbl">Caixa</label><input id="fp-q-v2" class="edinp" placeholder="ex: Financeiro, PSP..."><button class="btn-ok" onclick="applyForm('v2')">✅ Aplicar</button><button class="btn-rst" onclick="resetVer('v2')">↺ Reset</button></div><div id="hist-v2" class="edhist"></div></div></div>
+  <div id="pane-v3" class="pane"><div class="rat-card"><div class="rat-tit">📝 Racional desta versão</div><textarea class="rat-txt" id="rat-v3" placeholder="Escreva aqui o racional e justificativa desta estrutura..." oninput="saveRat('v3',this.value)"></textarea></div><div class="srow" id="v3-srow"><div class="scard" style="border-top-color:#4361ee"><div class="snum" style="color:#4361ee" id="v3-sum-N1">5</div><div class="slbl">N1</div></div><div class="scard" style="border-top-color:#f39c12"><div class="snum" style="color:#f39c12" id="v3-sum-N2">3</div><div class="slbl">N2</div></div><div class="scard" style="border-top-color:#2ecc71"><div class="snum" style="color:#2ecc71" id="v3-sum-Melhoria-Continua">1</div><div class="slbl">Melhoria Contínua</div></div><div class="scard" style="border-top-color:#9b59b6"><div class="snum" style="color:#9b59b6" id="v3-sum-QA">1</div><div class="slbl">QA</div></div><div class="scard" style="border-top-color:#e74c3c"><div class="snum" style="color:#e74c3c" id="v3-sum-Customer-Improvement">1</div><div class="slbl">Customer Improvement</div></div><div class="scard" style="border-top-color:#1a1a2e"><div class="snum" id="v3-sum-total">11</div><div class="slbl">Total</div></div></div><div class="drag-tip">⠿ Arraste os cards entre os times &nbsp;·&nbsp; Clique nas tags <strong>✏️</strong> para editar a caixa</div><div class="org-wrap"><div class="gerbox"><span style="font-size:28px">👔</span><div><div class="gertit">Gerência Unificada</div><div class="gersub">N1 · N2 · Melhoria Contínua · QA · Customer Improvement</div></div></div><div class="connv"></div><div class="trow"><div class="tcol"><div class="thdr" style="background:#4361ee"><span style="font-size:20px">🔵</span><div><div class="tname">N1</div><div class="tcnt" id="v3-cnt-N1">5 pessoas</div></div></div><div class="tbody droptarget" data-ver="v3" data-team="N1" data-tid="N1" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v3-thamires" data-ver="v3" data-aid="thamires" data-aname="Thamires" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">T</div><div class="ai"><div class="an">Thamires</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="thamires" data-qi="0" onclick="editQt(event)">ERP ✏️</span><span class="qtag" data-ver="v3" data-aid="thamires" data-qi="1" onclick="editQt(event)">Long Tail ✏️</span><span class="qtag" data-ver="v3" data-aid="thamires" data-qi="2" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v3-isabela" data-ver="v3" data-aid="isabela" data-aname="Isabela" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">I</div><div class="ai"><div class="an">Isabela</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="isabela" data-qi="0" onclick="editQt(event)">ERP ✏️</span><span class="qtag" data-ver="v3" data-aid="isabela" data-qi="1" onclick="editQt(event)">Long Tail ✏️</span><span class="qtag" data-ver="v3" data-aid="isabela" data-qi="2" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v3-bell" data-ver="v3" data-aid="bell" data-aname="Bell" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">B</div><div class="ai"><div class="an">Bell</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="bell" data-qi="0" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v3-fernanda" data-ver="v3" data-aid="fernanda" data-aname="Fernanda" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">F</div><div class="ai"><div class="an">Fernanda</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="fernanda" data-qi="0" onclick="editQt(event)">E-commerce ✏️</span><span class="qtag" data-ver="v3" data-aid="fernanda" data-qi="1" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v3-liliane" data-ver="v3" data-aid="liliane" data-aname="Liliane" style="border:2px solid #4361ee22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#4361ee">L</div><div class="ai"><div class="an">Liliane</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="liliane" data-qi="0" onclick="editQt(event)">Banco ✏️</span><span class="qtag" data-ver="v3" data-aid="liliane" data-qi="1" onclick="editQt(event)">E-commerce ✏️</span><span class="qtag" data-ver="v3" data-aid="liliane" data-qi="2" onclick="editQt(event)">PSP ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol"><div class="thdr" style="background:#f39c12"><span style="font-size:20px">🟡</span><div><div class="tname">N2</div><div class="tcnt" id="v3-cnt-N2">3 pessoas</div></div></div><div class="tbody droptarget" data-ver="v3" data-team="N2" data-tid="N2" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v3-marcella" data-ver="v3" data-aid="marcella" data-aname="Marcella" style="border:2px solid #f39c1222;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#f39c12">M</div><div class="ai"><div class="an">Marcella</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="marcella" data-qi="0" onclick="editQt(event)">Credenciamento ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v3-jessica" data-ver="v3" data-aid="jessica" data-aname="Jessica" style="border:2px solid #f39c1222;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#f39c12">J</div><div class="ai"><div class="an">Jessica</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="jessica" data-qi="0" onclick="editQt(event)">Financeiro ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div><div class="acard" draggable="true" id="v3-aline" data-ver="v3" data-aid="aline" data-aname="Aline" style="border:2px solid #f39c1222;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#f39c12">A</div><div class="ai"><div class="an">Aline</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="aline" data-qi="0" onclick="editQt(event)">Financeiro ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol-sm"><div class="thdr" style="background:#2ecc71"><span style="font-size:20px">🔄</span><div><div class="tname">Melhoria Contínua</div><div class="tcnt" id="v3-cnt-Melhoria-Continua">1 pessoa</div></div></div><div class="tbody droptarget" data-ver="v3" data-team="Melhoria Contínua" data-tid="Melhoria-Continua" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v3-kaic" data-ver="v3" data-aid="kaic" data-aname="Kaic" style="border:2px solid #2ecc7122;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#2ecc71">K</div><div class="ai"><div class="an">Kaic</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="kaic" data-qi="0" onclick="editQt(event)">Melhoria Contínua ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol-sm"><div class="thdr" style="background:#9b59b6"><span style="font-size:20px">🔍</span><div><div class="tname">QA</div><div class="tcnt" id="v3-cnt-QA">1 pessoa</div></div></div><div class="tbody droptarget" data-ver="v3" data-team="QA" data-tid="QA" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v3-teixeira" data-ver="v3" data-aid="teixeira" data-aname="Teixeira" style="border:2px solid #9b59b622;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#9b59b6">T</div><div class="ai"><div class="an">Teixeira</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="teixeira" data-qi="0" onclick="editQt(event)">QA ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div><div class="tcol-sm"><div class="thdr" style="background:#e74c3c"><span style="font-size:20px">⭐</span><div><div class="tname">Customer Improvement</div><div class="tcnt" id="v3-cnt-Customer-Improvement">1 pessoa</div></div></div><div class="tbody droptarget" data-ver="v3" data-team="Customer Improvement" data-tid="Customer-Improvement" ondragover="dov(event)" ondrop="ddrop(event)" ondragenter="this.classList.add('dover')" ondragleave="this.classList.remove('dover')"><div class="acard" draggable="true" id="v3-vasia" data-ver="v3" data-aid="vasia" data-aname="Vasia" style="border:2px solid #e74c3c22;background:#fff" ondragstart="ds(event)"><div class="atop"><div class="av" style="background:#e74c3c">V</div><div class="ai"><div class="an">Vasia</div><div class="aq"><span class="qtag" data-ver="v3" data-aid="vasia" data-qi="0" onclick="editQt(event)">Customer Improvement ✏️</span></div></div></div><div class="dh">⠿ arrastar</div></div></div></div></div></div><div class="movsec"><div class="movtit">🔀 Movimentações predefinidas desta versão</div><div class="movleg"><div class="mitem"><span class="mwho">🟡❌ <strong>Luciene + Nicoly</strong></span><div class="mflow"><span class="mde">N2 · Transacional</span><span class="marr">→</span><span class="para-elim">Posição eliminada do N2</span></div></div></div></div><div class="edpanel"><div class="edtit">🔧 Simular movimentação adicional</div><div class="edhint">Selecione pessoa, novo time e caixa (opcional), depois clique em Aplicar. Ou simplesmente arraste os cards no organograma acima.</div><div class="edform"><label class="edlbl">Pessoa</label><select id="fp-p-v3" class="edsel"><option value="thamires">Thamires</option><option value="isabela">Isabela</option><option value="bell">Bell</option><option value="fernanda">Fernanda</option><option value="liliane">Liliane</option><option value="marcella">Marcella</option><option value="jessica">Jessica</option><option value="aline">Aline</option><option value="kaic">Kaic</option><option value="teixeira">Teixeira</option><option value="vasia">Vasia</option></select><span class="edarr">→</span><label class="edlbl">Novo Time</label><select id="fp-t-v3" class="edsel"><option value="N1">N1</option><option value="N2">N2</option><option value="Melhoria Contínua">Melhoria Contínua</option><option value="QA">QA</option><option value="Customer Improvement">Customer Improvement</option></select><label class="edlbl">Caixa</label><input id="fp-q-v3" class="edinp" placeholder="ex: Financeiro, PSP..."><button class="btn-ok" onclick="applyForm('v3')">✅ Aplicar</button><button class="btn-rst" onclick="resetVer('v3')">↺ Reset</button></div><div id="hist-v3" class="edhist"></div></div></div>
+</div>
+
+<div class="footer">Gerado por <strong>Skynet QA v10.0</strong> · Zoop | iFood Pago · Simulação de Times · Arraste cards entre times · Clique ✏️ para editar caixas · Racional salvo automaticamente</div>
+
+<script>
+// ── DRAG & DROP ────────────────────────────────────────────────
+var _dc = null; // dragged card element
+var _dt = null; // source team
+
+function ds(e) {
+  _dc = e.currentTarget;
+  _dt = _dc.closest('.tbody') ? _dc.closest('.tbody').dataset.team : '';
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(function(){ if(_dc) _dc.classList.add('dragging'); }, 0);
+}
+function dov(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+
+function ddrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dover');
+  if (!_dc) return;
+  var tbody = e.currentTarget;
+  var newTeam = tbody.dataset.team;
+  var ver = tbody.dataset.ver;
+  var oldParent = _dc.closest('.tbody');
+  if (oldParent === tbody) { _dc.classList.remove('dragging'); _dc = null; return; }
+
+  var oldTeam = _dt || '?';
+  var aname   = _dc.dataset.aname || '';
+
+  // remove empty-drop placeholder if present
+  var emp = tbody.querySelector('.edrop');
+  if (emp) emp.remove();
+
+  // move card
+  tbody.appendChild(_dc);
+  _dc.classList.remove('dragging');
+
+  // style as moved
+  _dc.style.border = '3px solid #FF6B35';
+  _dc.style.background = '#fffbf5';
+  var av = _dc.querySelector('.av');
+  if (av) av.style.background = '#FF6B35';
+
+  // add/update badge
+  var b = _dc.querySelector('.mbadge');
+  if (!b) {
+    b = document.createElement('div');
+    b.className = 'mbadge';
+    _dc.prepend(b);
+  }
+  b.textContent = '🔀 Veio de: ' + oldTeam;
+
+  // if old parent is empty, add placeholder back
+  if (oldParent && oldParent.querySelectorAll('.acard').length === 0) {
+    var tid = oldParent.dataset.tid || '';
+    var emp2 = document.createElement('div');
+    emp2.className = 'edrop';
+    emp2.id = ver + '-emp-' + tid;
+    emp2.textContent = '⬇️ Solte aqui';
+    oldParent.appendChild(emp2);
+  }
+
+  updateCounts(ver);
+  addHist(ver, aname, oldTeam, newTeam);
+  _dc = null; _dt = null;
+}
+
+// ── EDIT QUEUE TAG ──────────────────────────────────────────────
+function editQt(e) {
+  e.stopPropagation();
+  var span = e.currentTarget;
+  var cur  = span.textContent.replace(' ✏️','').trim();
+  var val  = prompt('✏️ Editar caixa:', cur);
+  if (val !== null && val.trim()) {
+    span.textContent = val.trim() + ' ✏️';
+  }
+}
+
+// ── FORM ────────────────────────────────────────────────────────
+function applyForm(ver) {
+  var pid   = document.getElementById('fp-p-' + ver).value;
+  var team  = document.getElementById('fp-t-' + ver).value;
+  var queue = document.getElementById('fp-q-' + ver).value.trim();
+
+  var card  = document.getElementById(ver + '-' + pid);
+  if (!card) return;
+
+  var oldParent = card.closest('.tbody');
+  var oldTeam   = oldParent ? oldParent.dataset.team : '?';
+  var aname     = card.dataset.aname || pid;
+
+  // find target tbody
+  var pane = document.getElementById('pane-' + ver);
+  var target = null;
+  pane.querySelectorAll('.tbody').forEach(function(tb){
+    if (tb.dataset.team === team) target = tb;
+  });
+  if (!target || target === oldParent) return;
+
+  // remove empty placeholder
+  var emp = target.querySelector('.edrop');
+  if (emp) emp.remove();
+
+  target.appendChild(card);
+  card.style.border = '3px solid #FF6B35';
+  card.style.background = '#fffbf5';
+  var av = card.querySelector('.av');
+  if (av) av.style.background = '#FF6B35';
+
+  // badge
+  var b = card.querySelector('.mbadge');
+  if (!b) { b = document.createElement('div'); b.className = 'mbadge'; card.prepend(b); }
+  b.textContent = '🔀 Veio de: ' + oldTeam;
+
+  // update queue tags if provided
+  if (queue) {
+    var aqEl = card.querySelector('.aq');
+    if (aqEl) {
+      aqEl.innerHTML = queue.split(',').map(function(q,i){
+        return '<span class="qtag" onclick="editQt(event)">' + q.trim() + ' ✏️</span>';
+      }).join('');
+    }
+  }
+
+  // if old parent empty
+  if (oldParent && oldParent.querySelectorAll('.acard').length === 0) {
+    var tid2 = oldParent.dataset.tid || '';
+    var emp3 = document.createElement('div');
+    emp3.className = 'edrop';
+    emp3.textContent = '⬇️ Solte aqui';
+    oldParent.appendChild(emp3);
+  }
+
+  document.getElementById('fp-q-' + ver).value = '';
+  updateCounts(ver);
+  addHist(ver, aname, oldTeam, team + (queue ? ' · ' + queue : ''));
+}
+
+// ── RESET ────────────────────────────────────────────────────────
+var _initial = {};
+function resetVer(ver) {
+  if (!confirm('Resetar movimentações extras de ' + ver.toUpperCase() + '?')) return;
+  var pane = document.getElementById('pane-' + ver);
+  if (_initial[ver]) {
+    pane.innerHTML = _initial[ver];
+    // restore rationale from localStorage
+    var el = document.getElementById('rat-' + ver);
+    if (el) el.value = localStorage.getItem('rat-' + ver) || '';
+  }
+}
+
+// ── UPDATE COUNTS ────────────────────────────────────────────────
+function updateCounts(ver) {
+  var pane = document.getElementById('pane-' + ver);
+  var total = 0;
+  pane.querySelectorAll('.tbody').forEach(function(tb){
+    var cnt   = tb.querySelectorAll('.acard').length;
+    var tid   = tb.dataset.tid || '';
+    var cntEl = document.getElementById(ver + '-cnt-' + tid);
+    if (cntEl) cntEl.textContent = cnt + ' ' + (cnt === 1 ? 'pessoa' : 'pessoas');
+    // summary
+    var sumEl = document.getElementById(ver + '-sum-' + tid);
+    if (sumEl) sumEl.textContent = cnt;
+    total += cnt;
+  });
+  var totEl = document.getElementById(ver + '-sum-total');
+  if (totEl) totEl.textContent = total;
+}
+
+// ── HISTORY ──────────────────────────────────────────────────────
+function addHist(ver, who, de, para) {
+  var el = document.getElementById('hist-' + ver);
+  if (!el) return;
+  var tit = el.querySelector('.edhist-tit');
+  if (!tit) {
+    tit = document.createElement('div');
+    tit.className = 'edhist-tit';
+    tit.textContent = '📋 Movimentações extras desta sessão:';
+    el.prepend(tit);
+  }
+  var now = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  var item = document.createElement('div');
+  item.className = 'hitem';
+  item.innerHTML =
+    '<span class="hwho">' + who + '</span>' +
+    '<span class="mde">' + de + '</span>' +
+    '<span class="marr">→</span>' +
+    '<span class="para-ok">' + para + '</span>' +
+    '<span class="htime">' + now + '</span>';
+  el.appendChild(item);
+}
+
+// ── RATIONALE ────────────────────────────────────────────────────
+function saveRat(ver, text) {
+  try { localStorage.setItem('rat-' + ver, text); } catch(e){}
+}
+
+// ── TABS ─────────────────────────────────────────────────────────
+function showTab(id, btn) {
+  document.querySelectorAll('.pane').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('pane-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+window.onload = function() {
+  ['v1','v2','v3'].forEach(function(ver){
+    _initial[ver] = document.getElementById('pane-' + ver).innerHTML;
+    var el = document.getElementById('rat-' + ver);
+    if (el) el.value = localStorage.getItem('rat-' + ver) || '';
+  });
+};
+</script>
+</body>
+</html>
