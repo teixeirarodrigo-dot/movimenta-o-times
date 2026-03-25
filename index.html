@@ -364,6 +364,113 @@ window.onload = function() {
     if (el) el.value = localStorage.getItem('rat-' + ver) || '';
   });
 };
+
+
+
+// ══════════════════════════════════════════════════════════════
+// PERSISTÊNCIA NO LOCALSTORAGE
+// Salva e restaura a posição dos cards automaticamente
+// ══════════════════════════════════════════════════════════════
+
+const STORAGE_KEY = 'simulacao_times_state';
+
+// Função para salvar o estado atual
+function saveState() {
+  const teams = {};
+  
+  // Para cada time (tbody)
+  document.querySelectorAll('.tbody').forEach(tbody => {
+    const teamName = tbody.dataset.team;
+    const version = tbody.dataset.ver;
+    const key = `${teamName}_${version}`;
+    
+    // Pegar todas as pessoas (acard) deste time
+    const people = [];
+    tbody.querySelectorAll('.acard').forEach(card => {
+      const aid = card.dataset.aid;
+      const aname = card.dataset.aname;
+      if (aid) {
+        people.push({ aid, aname });
+      }
+    });
+    
+    teams[key] = people;
+  });
+  
+  // Salvar no localStorage
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
+    console.log('✅ Estado salvo com sucesso!');
+  } catch (e) {
+    console.error('❌ Erro ao salvar estado:', e);
+  }
+}
+
+// Função para restaurar o estado salvo
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      console.log('ℹ️ Nenhum estado salvo encontrado');
+      return;
+    }
+    
+    const teams = JSON.parse(saved);
+    console.log('📂 Restaurando estado salvo...');
+    
+    // Para cada time salvo
+    Object.keys(teams).forEach(key => {
+      const [teamName, version] = key.split('_');
+      const tbody = document.querySelector(`.tbody[data-team="${teamName}"][data-ver="${version}"]`);
+      
+      if (!tbody) return;
+      
+      const savedPeople = teams[key];
+      
+      // Reordenar os cards conforme o estado salvo
+      savedPeople.forEach((person) => {
+        const card = document.getElementById(`${version}-${person.aid}`);
+        if (card && card.closest('.tbody') !== tbody) {
+          // Move card para o time correto
+          tbody.appendChild(card);
+        } else if (card) {
+          // Card já está no time certo, apenas reordena
+          tbody.appendChild(card);
+        }
+      });
+    });
+    
+    console.log('✅ Estado restaurado com sucesso!');
+  } catch (e) {
+    console.error('❌ Erro ao restaurar estado:', e);
+  }
+}
+
+// Adicionar listener para salvar quando soltar um card (após o drop)
+window.addEventListener('load', function() {
+  // Restaurar estado ao carregar a página
+  setTimeout(loadState, 100);
+  
+  // Salvar estado após qualquer drop
+  document.querySelectorAll('.tbody').forEach(tbody => {
+    tbody.addEventListener('drop', function() {
+      // Usar timeout para garantir que o DOM foi atualizado
+      setTimeout(saveState, 100);
+    });
+  });
+  
+  console.log('🔄 Sistema de persistência ativado!');
+});
+
+// Função para limpar o estado salvo (útil para debugging)
+function clearSavedState() {
+  localStorage.removeItem(STORAGE_KEY);
+  console.log('🗑️ Estado salvo removido! Recarregue a página para ver o estado original.');
+}
+
+// Expor função globalmente para debug
+window.clearSavedState = clearSavedState;
+
 </script>
 </body>
 </html>
